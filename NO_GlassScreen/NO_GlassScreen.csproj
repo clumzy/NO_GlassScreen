@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <AssemblyName>NO_Tactitools</AssemblyName>
+    <AssemblyName>NO_GlassScreen</AssemblyName>
     <Product>Nuclear Option Tactical Tools</Product>
     <Version>0.6.0.2</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -11,7 +11,7 @@
       https://nuget.bepinex.dev/v3/index.json;
       https://nuget.samboy.dev/v3/index.json
     </RestoreAdditionalProjectSources>
-    <RootNamespace>NO_Tactitools</RootNamespace>
+    <RootNamespace>NO_GlassScreen</RootNamespace>
     <GameDirectory>F:/SteamLibrary/steamapps/common/Nuclear Option</GameDirectory>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
@@ -60,9 +60,6 @@
     </Reference>
     <Reference Include="Rewired_Core">
       <HintPath>$(GameDirectory)/NuclearOption_Data/Managed/Rewired_Core.dll</HintPath>
-    </Reference>
-    <Reference Include="com.qwerty1423.NOAutopilot">
-      <HintPath>$(GameDirectory)/BepInEx/plugins/no-autopilot-mod/com.qwerty1423.NOAutopilot.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">

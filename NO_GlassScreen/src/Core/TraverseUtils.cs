@@ -1,6 +1,6 @@
 using HarmonyLib;
 
-namespace NO_Tactitools.Core;
+namespace NO_GlassScreen.Core;
 
 /// <summary>
 /// A helper class to cache Harmony <see cref="Traverse"/> instances for repeatedly accessing a field on an object.

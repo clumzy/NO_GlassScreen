@@ -6,7 +6,7 @@ using UnityEngine.UI;
 using System.Collections.Generic;
 using System.IO;
 
-namespace NO_Tactitools.Core;
+namespace NO_GlassScreen.Core;
 
 public class UIBindings {
         public class Draw {
