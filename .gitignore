@@ -1,0 +1,13 @@
+*.dll
+*.cache
+*.json
+*.props
+*.editorconfig
+*.pdb
+obj/
+bin/
+.idea/
+.vscode/
+.github/
+*.zip
+*.ttf
