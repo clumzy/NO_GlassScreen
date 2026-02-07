@@ -9,7 +9,7 @@ namespace NO_GlassScreen.Core {
     [BepInPlugin("NO_GlassScreen", "NOTT", "0.6.0.2")]
     public class Plugin : BaseUnityPlugin {
         public static Harmony harmony;
-        public static ConfigEntry<string> whatever;
+        public static ConfigEntry<string> webServerEnabled;
         public static ConfigEntry<bool> debugModeEnabled;
         internal static new ManualLogSource Logger;
         public static Plugin Instance;
@@ -17,14 +17,14 @@ namespace NO_GlassScreen.Core {
         private void Awake() {
             Instance = this;
             // MFD Nav
-            whatever = Config.Bind("MFD Nav",
-                "MFD Nav - Enter - Controller Name",
+            webServerEnabled = Config.Bind("Web Server",
+                "Web Server - Enabled",
                 "",
                 new ConfigDescription(
-                    "Name of the peripheral",
+                    "Enable or disable the Web Server.",
                     null,
                     new ConfigurationManagerAttributes {
-                        Browsable = false
+                        Order = 0
                     }));
             // Debug Mode settings
             debugModeEnabled = Config.Bind("Debug Mode",
@@ -37,7 +37,7 @@ namespace NO_GlassScreen.Core {
             // CORE PATCHES
             //harmony.PatchAll(typeof(RegisterControllerPatch));
             // Log completion
-            Log("NO Tactitools loaded successfully !");
+            Log("NO GlassScreen loaded successfully !");
         }
 
 
