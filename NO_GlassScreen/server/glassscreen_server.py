@@ -100,6 +100,10 @@ def index():
         
         ui.timer(0.5, update_header_styles)
 
+        # SYSTEM Section Title
+        title_system = ui.label("SYSTEM").classes('text-sm font-bold tracking-widest w-full text-center')
+        title_system.style('opacity: 0.6; letter-spacing: 0.15em;')
+
         # Control Grid - Responsive Flex Layout
         with ui.element('div').classes('w-full flex-grow') as grid_container:
             grid_container.style('display: grid; grid-template-columns: repeat(2, 1fr); grid-auto-rows: 1fr; gap: 0.5rem;')
