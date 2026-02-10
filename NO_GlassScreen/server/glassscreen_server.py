@@ -13,6 +13,11 @@ plane_state: dict = {
     "engine":         False,
     "mfd_main_color": "#22c55e",
     "mfd_text_color": "#22c55e",
+    "weapon_name":    "",
+    "weapon_ammo":    "0",
+    "ir_flare":       0,
+    "ir_flare_max":   128,
+    "ew_jammer":      0,
 }
 
 # commands waiting to be picked up by the game mod
@@ -109,10 +114,11 @@ def index():
                     with btn:
                         icon = ui.icon(icon_name).classes('text-5xl flex-shrink-0')
                         status_label = ui.label().classes('hidden')
-                        ui.label(display_name).classes('text-[10px] font-bold tracking-widest opacity-40 flex-wrap break-words')
+                        name_label = ui.label(display_name).classes('text-[10px] font-bold tracking-widest flex-wrap break-words')
+                        name_label.style('opacity: 0.4;')
                     
                     # Reactive UI Updates
-                    def update_ui(ignored_val, k=key, b=btn, sl=status_label, ic=icon):
+                    def update_ui(ignored_val, k=key, b=btn, sl=status_label, ic=icon, nl=name_label):
                         val = plane_state[k]
                         main_color = plane_state.get('mfd_main_color', '#22c55e')
                         
@@ -121,18 +127,124 @@ def index():
                             b.style(f'background-color: {main_color} !important; color: #ffffff !important; border-color: {main_color} !important;')
                             b.style(f'box-shadow: 0 0 30px {main_color}66;')
                             ic.style('color: #ffffff !important;')
+                            nl.style('color: #ffffff !important; opacity: 1 !important;')
                         else:
                             # OFF STYLE: Black Background, Main Color Outline/Icon
                             b.style(f'background-color: #000000 !important; color: {main_color} !important; border-color: {main_color} !important;')
                             b.style('box-shadow: none;')
                             ic.style(f'color: {main_color} !important;')
+                            nl.style(f'color: {main_color} !important; opacity: 0.4 !important;')
                     
                     # Trigger UI update on state OR color change
                     ui.label().bind_visibility_from(plane_state, key, backward=lambda v, f=update_ui: (f(v), False)[1])
                     ui.label().bind_visibility_from(plane_state, 'mfd_main_color', backward=lambda v, f=update_ui: (f(v), False)[1])
 
+        # Weapon/Countermeasure Display Panel
+        with ui.column().classes('w-full flex-grow border-t border-slate-700 pt-4 gap-4'):
+            # WEAPONS Section Title
+            title_weapons = ui.label("WEAPONS").classes('text-sm font-bold tracking-widest w-full text-center')
+            title_weapons.style('opacity: 0.6; letter-spacing: 0.15em;')
+            
+            # Weapon Display - Full Width
+            with ui.row().classes('w-full justify-center items-center'):
+                with ui.column().classes('items-center gap-0 flex-grow'):
+                    weapon_name_label = ui.label(plane_state.get('weapon_name', 'NONE')).classes('text-2xl font-bold tracking-widest')
+                    weapon_name_label.style('color: #ffffff')
+                    weapon_ammo_label = ui.label(plane_state.get('weapon_ammo', '0')).classes('text-5xl font-black tracking-widest')
+                    weapon_ammo_label.style('color: #ffffff')
+            
+            # Line between sections
+            ui.element('div').classes('w-full border-b border-slate-700')
+            
+            # COUNTERMEASURES Section Title
+            title_cm = ui.label("COUNTERMEASURES").classes('text-sm font-bold tracking-widest w-full text-center')
+            title_cm.style('opacity: 0.6; letter-spacing: 0.15em;')
+            
+            # IR/EW Row - Shared
+            with ui.row().classes('w-full justify-center items-center gap-5 flex-grow'):
+                # IR Flare Display
+                with ui.column().classes('items-center gap-0 flex-grow'):
+                    ui.label("IR").classes('text-sm font-bold tracking-widest opacity-40')
+                    ir_label = ui.label(str(plane_state.get('ir_flare', 0))).classes('text-4xl font-black tracking-widest')
+                    ir_label.style('color: #ffffff')
+                
+                # EW Jammer Display
+                with ui.column().classes('items-center gap-0 flex-grow'):
+                    ui.label("EW").classes('text-sm font-bold tracking-widest opacity-40')
+                    ew_label = ui.label(f"{plane_state.get('ew_jammer', 0)}%").classes('text-4xl font-black tracking-widest')
+                    ew_label.style('color: #ffffff')
+            
+            def lerp_color(main_color_hex: str, ammo_ratio: float) -> str:
+                """Lerp between red (0) and main color (1)"""
+                # Ensure we have a valid hex string
+                if not isinstance(main_color_hex, str) or not main_color_hex.startswith('#'):
+                    main_color_hex = '#22c55e'
+                
+                try:
+                    # Convert hex to RGB
+                    main_r = int(main_color_hex[1:3], 16)
+                    main_g = int(main_color_hex[3:5], 16)
+                    main_b = int(main_color_hex[5:7], 16)
+                except (ValueError, IndexError):
+                    return '#22c55e'
+                
+                # Lerp from red (255, 0, 0) to main color
+                r = int(255 + (main_r - 255) * ammo_ratio)
+                g = int(0 + (main_g - 0) * ammo_ratio)
+                b = int(0 + (main_b - 0) * ammo_ratio)
+                
+                return f'#{r:02x}{g:02x}{b:02x}'
+            
+            def update_weapon_display():
+                # Validate and get main color - ensure it's a string hex value
+                main_color = plane_state.get('mfd_main_color', '#22c55e')
+                if not isinstance(main_color, str) or not main_color.startswith('#'):
+                    main_color = '#22c55e'
+                
+                weapon_name = str(plane_state.get('weapon_name', 'NONE'))
+                weapon_ammo = str(plane_state.get('weapon_ammo', '0'))
+                ir_ammo = plane_state.get('ir_flare', 0)
+                ir_max = plane_state.get('ir_flare_max', 128)
+                ew_ammo = plane_state.get('ew_jammer', 0)
+                
+                weapon_name_label.text = weapon_name
+                weapon_ammo_label.text = weapon_ammo
+                ir_label.text = str(ir_ammo)
+                ew_label.text = f"{ew_ammo}%"
+                
+                # Weapon name - white if "False", else main color
+                if weapon_name == 'False':
+                    weapon_name_label.style('color: #ffffff')
+                else:
+                    weapon_name_label.style(f'color: {main_color}')
+                
+                # Weapon ammo - red if out of ammo (0) or "False", else main color
+                if weapon_ammo == '0' or weapon_ammo == 'False':
+                    weapon_color = '#ffffff' if weapon_ammo == 'False' else '#ff0000'
+                else:
+                    weapon_color = main_color
+                weapon_ammo_label.style(f'color: {weapon_color}')
+                
+                # IR flare - white if "False", else lerp from red to main color based on ir_flare_max
+                if str(ir_ammo) == 'False':
+                    ir_label.style('color: #ffffff')
+                else:
+                    ir_ratio = min(max(ir_ammo, 0) / max(ir_max, 1), 1.0)
+                    ir_color = lerp_color(main_color, ir_ratio)
+                    ir_label.style(f'color: {ir_color}')
+                
+                # EW jammer - white if "False", else lerp from red to main color
+                if str(ew_ammo) == 'False':
+                    ew_label.style('color: #ffffff')
+                else:
+                    ew_ratio = min(max(ew_ammo, 0) / 100.0, 1.0)
+                    ew_color = lerp_color(main_color, ew_ratio)
+                    ew_label.style(f'color: {ew_color}')
+            
+            ui.timer(0.5, update_weapon_display)
+
         # Bottom Telemetry Bar
-        with ui.row().classes('w-full mt-8 justify-center items-center opacity-30 border-t border-slate-800 pt-2'):
+        with ui.row().classes('w-full justify-center items-center opacity-30 border-t border-slate-800 pt-2'):
             connection_status = ui.label("SEARCHING FOR LINK...").classes('text-[8px] uppercase tracking-widest animate-pulse')
 
             def update_bottom_bar():

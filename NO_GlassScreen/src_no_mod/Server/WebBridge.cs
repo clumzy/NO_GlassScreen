@@ -48,6 +48,11 @@ namespace NO_GlassScreen.Server {
             public bool engine;
             public string mfd_main_color;
             public string mfd_text_color;
+            public string weapon_name;
+            public string weapon_ammo;
+            public int ir_flare;
+            public int ir_flare_max;
+            public int ew_jammer;
         }
 
         [Serializable]
@@ -64,6 +69,11 @@ namespace NO_GlassScreen.Server {
                 engine         = ReadEngine(),
                 mfd_main_color = ReadMFDMainColor(),
                 mfd_text_color = ReadMFDTextColor(),
+                weapon_name    = ReadWeaponName(),
+                weapon_ammo    = ReadWeaponAmmo(),
+                ir_flare       = ReadIRFlare(),
+                ir_flare_max   = ReadIRFlareMax(),
+                ew_jammer      = ReadEWJammer(),
             };
         }
 
@@ -137,6 +147,52 @@ namespace NO_GlassScreen.Server {
 
         private static bool ReadEngine() {
             return GameBindings.Player.Aircraft.GetAircraft()?.Ignition ?? false;
+        }
+
+        private static string ReadWeaponName() {
+            try {
+                return GameBindings.Player.Aircraft.Weapons.GetActiveStationName() ?? "NONE";
+            }
+            catch (Exception) {
+                return "NONE";
+            }
+        }
+
+        private static string ReadWeaponAmmo() {
+            try {
+                string ammoStr = GameBindings.Player.Aircraft.Weapons.GetActiveStationAmmoString();
+                return ammoStr?.Replace(" ", "") ?? "0";
+            }
+            catch (Exception) {
+                return "0";
+            }
+        }
+
+        private static int ReadIRFlare() {
+            try {
+                return GameBindings.Player.Aircraft.Countermeasures.GetIRFlareAmmo();
+            }
+            catch (Exception) {
+                return 0;
+            }
+        }
+
+        private static int ReadIRFlareMax() {
+            try {
+                return GameBindings.Player.Aircraft.Countermeasures.GetIRFlareMaxAmmo();
+            }
+            catch (Exception) {
+                return 128; // fallback to default max
+            }
+        }
+
+        private static int ReadEWJammer() {
+            try {
+                return GameBindings.Player.Aircraft.Countermeasures.GetJammerAmmo();
+            }
+            catch (Exception) {
+                return 0;
+            }
         }
 
         // commands, received from server and executed in-game
