@@ -97,19 +97,19 @@ def index():
 
         # Control Grid - Responsive Flex Layout
         with ui.element('div').classes('w-full flex-grow') as grid_container:
-            grid_container.style('display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); grid-auto-rows: 1fr; gap: 0.5rem;')
+            grid_container.style('display: grid; grid-template-columns: repeat(2, 1fr); grid-auto-rows: 1fr; gap: 0.5rem;')
             
             for key in ["lights", "flight_control", "radar", "night_vision", "wheels", "engine"]:
                 icon_name = ICONS.get(key, 'settings')
                 display_name = key.replace('_', ' ').upper()
                 
                 with ui.card().tight().classes('bg-transparent border-0 shadow-none'):
-                    btn = ui.button(on_click=lambda _, k=key: toggle(k)).classes('w-full h-full flex flex-col items-center justify-start p-1 transition-all duration-300 bg-black box-border').props('unelevated stack')
-                    btn.style('border: 3px solid currentColor; aspect-ratio: 1;')
+                    btn = ui.button(on_click=lambda _, k=key: toggle(k)).classes('w-full h-full flex flex-row items-center justify-start p-2 transition-all duration-300 bg-black box-border gap-2').props('unelevated stack')
+                    btn.style('border: 3px solid currentColor;')
                     with btn:
-                        icon = ui.icon(icon_name).classes('text-5xl mt-auto')
-                        status_label = ui.label().classes('text-base font-bold tracking-wider mt-1')
-                        ui.label(display_name).classes('text-[9px] font-bold tracking-widest opacity-40 text-center mt-auto mb-1')
+                        icon = ui.icon(icon_name).classes('text-5xl flex-shrink-0')
+                        status_label = ui.label().classes('hidden')
+                        ui.label(display_name).classes('text-[10px] font-bold tracking-widest opacity-40 flex-wrap break-words')
                     
                     # Reactive UI Updates
                     def update_ui(ignored_val, k=key, b=btn, sl=status_label, ic=icon):
@@ -121,13 +121,11 @@ def index():
                             b.style(f'background-color: {main_color} !important; color: #ffffff !important; border-color: {main_color} !important;')
                             b.style(f'box-shadow: 0 0 30px {main_color}66;')
                             ic.style('color: #ffffff !important;')
-                            sl.text = "ACTIVE"
                         else:
                             # OFF STYLE: Black Background, Main Color Outline/Icon
                             b.style(f'background-color: #000000 !important; color: {main_color} !important; border-color: {main_color} !important;')
                             b.style('box-shadow: none;')
                             ic.style(f'color: {main_color} !important;')
-                            sl.text = "OFF"
                     
                     # Trigger UI update on state OR color change
                     ui.label().bind_visibility_from(plane_state, key, backward=lambda v, f=update_ui: (f(v), False)[1])
