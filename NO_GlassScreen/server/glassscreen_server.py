@@ -1,19 +1,23 @@
 from nicegui import ui, app
 from fastapi import Request
+import time
 
 # state and commands
 # Current state of the plane systems (synced FROM the game mod)
-plane_state: dict[str, bool] = {
+plane_state: dict = {
     "lights":         False,
     "flight_control": False,
     "radar":          False,
     "night_vision":   False,
     "wheels":         False,
     "engine":         False,
+    "mfd_main_color": "#22c55e",
+    "mfd_text_color": "#22c55e",
 }
 
 # commands waiting to be picked up by the game mod
 pending_commands: list[str] = []
+last_sync: float = 0.0
 
 ICONS = {
     "lights":         "flare",
@@ -33,9 +37,16 @@ def toggle(key: str):
     ui.run_javascript("window.navigator.vibrate(50)")
 
 
+def check_connection_timeout():
+    if time.time() - last_sync > 2.0:
+        for key in plane_state:
+            plane_state[key] = False
+
+
 # web ui
 @ui.page("/")
 def index():
+    ui.timer(1.0, check_connection_timeout)
     # VIBE CODED UI SHIT
     ui.query('body').style('background: radial-gradient(circle, #1a1a1a 0%, #000000 100%); color: #e0e0e0; font-family: "Share Tech Mono", monospace; overflow: hidden;')
     ui.add_head_html('''
@@ -69,50 +80,87 @@ def index():
 
     with ui.column().classes('w-full max-w-lg mx-auto items-center q-pa-md'):
         # CRT-style Header
-        with ui.row().classes('w-full justify-between items-end border-b-2 border-green-700 pb-1 mb-8'):
-            with ui.column().classes('gap-0'):
-                ui.label("NO Glass Screen").classes('text-green-500 text-4xl font-black italic tracking-tighter leading-none')
-                ui.label("This post was made by \"George\" Gang").classes('text-green-900 text-[8px] font-bold tracking-[0.3em]')
-            with ui.column().classes('items-end gap-0'):
-                ui.label("LINK: ONLINE").classes('text-green-500 text-[10px] font-bold')
-                ui.label("SYS: 0.1.0").classes('text-green-900 text-[10px]')
+        header_container = ui.row().classes('w-full justify-between items-end pb-1 mb-8')
+        with header_container:
+            header_row = ui.row().classes('w-full justify-between items-end')
+            with header_row:
+                with ui.column().classes('gap-0'):
+                    title_label = ui.label("NO Glass Screen").classes('text-4xl font-black italic tracking-tighter leading-none')
+                    subtitle_label = ui.label("This post was made by \"George\" Gang").classes('text-[8px] font-bold tracking-[0.3em]')
+                with ui.column().classes('items-end gap-0'):
+                    link_label = ui.label("LINK: NIL").classes('text-red-500 text-[10px] font-bold')
+                    sys_label = ui.label("SYS: 0.1.0").classes('text-[10px]')
+
+                def update_header_styles():
+                    is_online = time.time() - last_sync < 2.0
+                    main_color = plane_state.get('mfd_main_color', '#22c55e')
+                    
+                    # Style Header
+                    header_container.style(f'border-bottom: 2px solid {main_color}; opacity: 0.8;')
+                    title_label.style(f'color: {main_color}')
+                    subtitle_label.style(f'color: {main_color}; opacity: 0.4;')
+                    sys_label.style(f'color: {main_color}; opacity: 0.4;')
+                    
+                    # Style Link
+                    link_label.text = "LINK: ONLINE" if is_online else "LINK: NIL"
+                    if is_online:
+                        link_label.style(f'color: {main_color} !important')
+                    else:
+                        link_label.style('color: #ef4444 !important')
+                
+                ui.timer(0.5, update_header_styles)
 
         # Control Grid
         with ui.grid(columns=2).classes('w-full gap-6'):
-            for key in plane_state:
+            for key in ["lights", "flight_control", "radar", "night_vision", "wheels", "engine"]:
                 icon_name = ICONS.get(key, 'settings')
                 display_name = key.replace('_', ' ').upper()
                 
                 with ui.card().tight().classes('bg-transparent border-0 shadow-none'):
-                    btn = ui.button(on_click=lambda _, k=key: toggle(k)).classes('w-full h-48 flex flex-col p-4 border-2 transition-all duration-300 rounded-lg bg-black text-green-500 border-green-500').props('unelevated stack')
+                    btn = ui.button(on_click=lambda _, k=key: toggle(k)).classes('w-full h-48 flex flex-col p-4 border-2 transition-all duration-300 rounded-lg bg-black box-border').props('unelevated stack')
                     with btn:
                         icon = ui.icon(icon_name).classes('text-7xl mb-auto mt-2')
-                        ui.label(display_name).classes('text-[10px] font-black tracking-widest mt-4 opacity-50')
+                        ui.label(display_name).classes('text-[12px] font-black tracking-widest mt-4 opacity-50')
                         status_label = ui.label().classes('text-2xl font-black tracking-widest')
                     
                     # Reactive UI Updates
-                    def update_ui(val, b=btn, sl=status_label, ic=icon):
+                    def update_ui(ignored_val, k=key, b=btn, sl=status_label, ic=icon):
+                        val = plane_state[k]
+                        main_color = plane_state.get('mfd_main_color', '#22c55e')
+                        
                         if val:
-                            # ON STYLE: Solid Green Background, White Content
-                            b.style('background-color: #22c55e !important; color: #ffffff !important; border-color: #22c55e !important;')
-                            b.classes('shadow-[0_0_30px_rgba(34,197,94,0.4)]')
+                            # ON STYLE: Solid Main Color Background, White Content
+                            b.style(f'background-color: {main_color} !important; color: #ffffff !important; border-color: {main_color} !important;')
+                            b.style(f'box-shadow: 0 0 30px {main_color}66;')
                             ic.style('color: #ffffff !important;')
                             sl.text = "ACTIVE"
                         else:
-                            # OFF STYLE: Black Background, Green Outline/Icon
-                            b.style('background-color: #000000 !important; color: #22c55e !important; border-color: #22c55e !important;')
-                            b.classes(remove='shadow-[0_0_30px_rgba(34,197,94,0.4)]')
-                            ic.style('color: #22c55e !important;')
+                            # OFF STYLE: Black Background, Main Color Outline/Icon
+                            b.style(f'background-color: #000000 !important; color: {main_color} !important; border-color: {main_color} !important;')
+                            b.style('box-shadow: none;')
+                            ic.style(f'color: {main_color} !important;')
                             sl.text = "OFF"
                     
-                    # Trigger UI update side effect
+                    # Trigger UI update on state OR color change
                     ui.label().bind_visibility_from(plane_state, key, backward=lambda v, f=update_ui: (f(v), False)[1])
+                    ui.label().bind_visibility_from(plane_state, 'mfd_main_color', backward=lambda v, f=update_ui: (f(v), False)[1])
 
         # Bottom Telemetry Bar
         with ui.row().classes('w-full mt-12 justify-between items-center opacity-30 border-t border-slate-800 pt-4'):
-            ui.label("SYNC: 60FPS").classes('text-[10px] uppercase')
-            ui.label("ESTABLISHED CONNECTION").classes('text-[10px] uppercase animate-pulse')
-            ui.label("NO-TEK HUD SYS").classes('text-[10px] uppercase')
+            sync_label = ui.label("SYNC: 60FPS").classes('text-[10px] uppercase')
+            connection_status = ui.label("SEARCHING FOR LINK...").classes('text-[10px] uppercase animate-pulse')
+            hud_label = ui.label("NO-TEK HUD SYS").classes('text-[10px] uppercase')
+
+            def update_bottom_bar():
+                is_online = time.time() - last_sync < 2.0
+                connection_status.text = "ESTABLISHED CONNECTION" if is_online else "SEARCHING FOR LINK..."
+                
+                main_color = plane_state.get('mfd_main_color', '#22c55e')
+                sync_label.style(f'color: {main_color}')
+                connection_status.style(f'color: {main_color}')
+                hud_label.style(f'color: {main_color}')
+            
+            ui.timer(1.0, update_bottom_bar)
 
 
 # api for game mod to sync state and receive commands
@@ -122,10 +170,11 @@ async def sync(request: Request):
     - Receives the real game state as JSON  → updates our UI dict
     - Returns any queued toggle commands  → mod executes them in-game
     """
-    global plane_state, pending_commands
+    global plane_state, pending_commands, last_sync
 
     data = await request.json()
     plane_state.update(data)  # merge real game state into our UI
+    last_sync = time.time()
 
     commands_to_send = list(pending_commands)
     pending_commands.clear()

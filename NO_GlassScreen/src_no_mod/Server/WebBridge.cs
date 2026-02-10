@@ -46,6 +46,8 @@ namespace NO_GlassScreen.Server {
             public bool night_vision;
             public bool wheels;
             public bool engine;
+            public string mfd_main_color;
+            public string mfd_text_color;
         }
 
         [Serializable]
@@ -60,7 +62,47 @@ namespace NO_GlassScreen.Server {
                 night_vision   = ReadNightVision(),
                 wheels         = ReadWheels(),
                 engine         = ReadEngine(),
+                mfd_main_color = ReadMFDMainColor(),
+                mfd_text_color = ReadMFDTextColor(),
             };
+        }
+
+        private static string ReadMFDMainColor() {
+            return GetNOTTColor(ref _nottMainColorField, "otherComponentMainColor", "#22c55e");
+        }
+
+        private static string ReadMFDTextColor() {
+            return GetNOTTColor(ref _nottTextColorField, "otherComponentTextColor", "#22c55e");
+        }
+
+        private static System.Reflection.FieldInfo _nottMainColorField = null;
+        private static System.Reflection.FieldInfo _nottTextColorField = null;
+        private static bool _nottSearched = false;
+
+        private static string GetNOTTColor(ref System.Reflection.FieldInfo fieldCache, string fieldName, string defaultHex) {
+            try {
+                if (!_nottSearched && fieldCache == null) {
+                    foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies()) {
+                        if (assembly.GetName().Name == "NO_Tactitools") {
+                            var type = assembly.GetType("NO_Tactitools.UI.MFD.MFDColorComponent+InternalState");
+                            if (type != null) {
+                                _nottMainColorField = type.GetField("otherComponentMainColor", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
+                                _nottTextColorField = type.GetField("otherComponentTextColor", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
+                            }
+                            break;
+                        }
+                    }
+                    _nottSearched = true;
+                }
+
+                if (fieldCache != null) {
+                    Color color = (Color)fieldCache.GetValue(null);
+                    return "#" + ColorUtility.ToHtmlStringRGB(color);
+                }
+            } catch (Exception) {
+                // Return default on error
+            }
+            return defaultHex;
         }
 
         private static TraverseCache<Aircraft, NavLights> _navLightsCache = new("navLights");
@@ -75,7 +117,13 @@ namespace NO_GlassScreen.Server {
         }
 
         private static bool ReadRadar() {
-            return GameBindings.Player.Aircraft.GetAircraft()?.radar.activated ?? false;
+            try {
+                return GameBindings.Player.Aircraft.GetAircraft()?.radar.activated ?? false;
+            }
+            catch (Exception) {
+                // in case radar is not installed, return false
+                return false;
+            }
         }
 
         private static TraverseCache<NightVision, bool> _nightVisionCache = new("nightVisActive");
@@ -119,7 +167,12 @@ namespace NO_GlassScreen.Server {
         }
 
         private static void ToggleRadar() {
-            GameBindings.Player.Aircraft.GetAircraft()?.CmdToggleRadar();
+            try {
+                GameBindings.Player.Aircraft.GetAircraft()?.CmdToggleRadar();
+            }
+            catch (Exception) {
+                Plugin.Log("[WebBridge] ToggleRadar() failed - radar may not be installed.");
+            }
             Plugin.Log("[WebBridge] ToggleRadar()");
         }
 
