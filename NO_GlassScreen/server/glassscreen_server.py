@@ -48,9 +48,9 @@ def check_connection_timeout():
 def index():
     ui.timer(1.0, check_connection_timeout)
     # VIBE CODED UI SHIT
-    ui.query('body').style('background: radial-gradient(circle, #1a1a1a 0%, #000000 100%); color: #e0e0e0; font-family: "Share Tech Mono", monospace; overflow: hidden;')
+    ui.query('body').style('background: #000000; color: #e0e0e0; font-family: "Orbitron", sans-serif; overflow: hidden;')
     ui.add_head_html('''
-        <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
         <style>
             @keyframes scan {
                 from { top: -20%; }
@@ -78,50 +78,38 @@ def index():
     ui.element('div').classes('scanline')
     ui.element('div').classes('crt-overlay')
 
-    with ui.column().classes('w-full max-w-lg mx-auto items-center q-pa-md'):
-        # CRT-style Header
-        header_container = ui.row().classes('w-full justify-between items-end pb-1 mb-8')
+    ui.query('body').style('display: flex; flex-direction: column; height: 100vh;')
+    
+    with ui.column().classes('w-full h-full mx-auto flex flex-col q-pa-md'):
+        # Minimalist Header
+        header_container = ui.row().classes('w-full justify-between items-center pb-2 mb-6 border-b border-slate-700')
         with header_container:
-            header_row = ui.row().classes('w-full justify-between items-end')
-            with header_row:
-                with ui.column().classes('gap-0'):
-                    title_label = ui.label("NO Glass Screen").classes('text-4xl font-black italic tracking-tighter leading-none')
-                    subtitle_label = ui.label("This post was made by \"George\" Gang").classes('text-[8px] font-bold tracking-[0.3em]')
-                with ui.column().classes('items-end gap-0'):
-                    link_label = ui.label("LINK: NIL").classes('text-red-500 text-[10px] font-bold')
-                    sys_label = ui.label("SYS: 0.1.0").classes('text-[10px]')
+            title_label = ui.label("NO GLASS").classes('text-2xl font-black tracking-tighter')
+            sys_label = ui.label("SYS: 0.1.0").classes('text-[8px] opacity-40 tracking-widest')
 
-                def update_header_styles():
-                    is_online = time.time() - last_sync < 2.0
-                    main_color = plane_state.get('mfd_main_color', '#22c55e')
-                    
-                    # Style Header
-                    header_container.style(f'border-bottom: 2px solid {main_color}; opacity: 0.8;')
-                    title_label.style(f'color: {main_color}')
-                    subtitle_label.style(f'color: {main_color}; opacity: 0.4;')
-                    sys_label.style(f'color: {main_color}; opacity: 0.4;')
-                    
-                    # Style Link
-                    link_label.text = "LINK: ONLINE" if is_online else "LINK: NIL"
-                    if is_online:
-                        link_label.style(f'color: {main_color} !important')
-                    else:
-                        link_label.style('color: #ef4444 !important')
-                
-                ui.timer(0.5, update_header_styles)
+        def update_header_styles():
+            main_color = plane_state.get('mfd_main_color', '#22c55e')
+            header_container.style(f'border-bottom-color: {main_color}; opacity: 0.8;')
+            title_label.style(f'color: {main_color}')
+            sys_label.style(f'color: {main_color}; opacity: 0.4;')
+        
+        ui.timer(0.5, update_header_styles)
 
-        # Control Grid
-        with ui.grid(columns=2).classes('w-full gap-6'):
+        # Control Grid - Responsive Flex Layout
+        with ui.element('div').classes('w-full flex-grow') as grid_container:
+            grid_container.style('display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); grid-auto-rows: 1fr; gap: 0.5rem;')
+            
             for key in ["lights", "flight_control", "radar", "night_vision", "wheels", "engine"]:
                 icon_name = ICONS.get(key, 'settings')
                 display_name = key.replace('_', ' ').upper()
                 
                 with ui.card().tight().classes('bg-transparent border-0 shadow-none'):
-                    btn = ui.button(on_click=lambda _, k=key: toggle(k)).classes('w-full h-48 flex flex-col p-4 border-2 transition-all duration-300 rounded-lg bg-black box-border').props('unelevated stack')
+                    btn = ui.button(on_click=lambda _, k=key: toggle(k)).classes('w-full h-full flex flex-col items-center justify-start p-1 transition-all duration-300 bg-black box-border').props('unelevated stack')
+                    btn.style('border: 3px solid currentColor; aspect-ratio: 1;')
                     with btn:
-                        icon = ui.icon(icon_name).classes('text-7xl mb-auto mt-2')
-                        ui.label(display_name).classes('text-[12px] font-black tracking-widest mt-4 opacity-50')
-                        status_label = ui.label().classes('text-2xl font-black tracking-widest')
+                        icon = ui.icon(icon_name).classes('text-5xl mt-auto')
+                        status_label = ui.label().classes('text-base font-bold tracking-wider mt-1')
+                        ui.label(display_name).classes('text-[9px] font-bold tracking-widest opacity-40 text-center mt-auto mb-1')
                     
                     # Reactive UI Updates
                     def update_ui(ignored_val, k=key, b=btn, sl=status_label, ic=icon):
@@ -146,19 +134,15 @@ def index():
                     ui.label().bind_visibility_from(plane_state, 'mfd_main_color', backward=lambda v, f=update_ui: (f(v), False)[1])
 
         # Bottom Telemetry Bar
-        with ui.row().classes('w-full mt-12 justify-between items-center opacity-30 border-t border-slate-800 pt-4'):
-            sync_label = ui.label("SYNC: 60FPS").classes('text-[10px] uppercase')
-            connection_status = ui.label("SEARCHING FOR LINK...").classes('text-[10px] uppercase animate-pulse')
-            hud_label = ui.label("NO-TEK HUD SYS").classes('text-[10px] uppercase')
+        with ui.row().classes('w-full mt-8 justify-center items-center opacity-30 border-t border-slate-800 pt-2'):
+            connection_status = ui.label("SEARCHING FOR LINK...").classes('text-[8px] uppercase tracking-widest animate-pulse')
 
             def update_bottom_bar():
                 is_online = time.time() - last_sync < 2.0
-                connection_status.text = "ESTABLISHED CONNECTION" if is_online else "SEARCHING FOR LINK..."
+                connection_status.text = "LINK ESTABLISHED" if is_online else "LINK OFFLINE"
                 
                 main_color = plane_state.get('mfd_main_color', '#22c55e')
-                sync_label.style(f'color: {main_color}')
                 connection_status.style(f'color: {main_color}')
-                hud_label.style(f'color: {main_color}')
             
             ui.timer(1.0, update_bottom_bar)
 
