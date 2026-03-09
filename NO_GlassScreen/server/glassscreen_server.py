@@ -100,51 +100,8 @@ def index():
         
         ui.timer(0.5, update_header_styles)
 
-        # SYSTEM Section Title
-        title_system = ui.label("SYSTEM").classes('text-sm font-bold tracking-widest w-full text-center')
-        title_system.style('opacity: 0.6; letter-spacing: 0.15em;')
-
-        # Control Grid - Responsive Flex Layout
-        with ui.element('div').classes('w-full flex-grow') as grid_container:
-            grid_container.style('display: grid; grid-template-columns: repeat(2, 1fr); grid-auto-rows: 1fr; gap: 0.5rem;')
-            
-            for key in ["lights", "flight_control", "radar", "night_vision", "wheels", "engine"]:
-                icon_name = ICONS.get(key, 'settings')
-                display_name = key.replace('_', ' ').upper()
-                
-                with ui.card().tight().classes('bg-transparent border-0 shadow-none'):
-                    btn = ui.button(on_click=lambda _, k=key: toggle(k)).classes('w-full h-full flex flex-row items-center justify-start p-2 transition-all duration-300 bg-black box-border gap-2').props('unelevated stack')
-                    btn.style('border: 3px solid currentColor;')
-                    with btn:
-                        icon = ui.icon(icon_name).classes('text-5xl flex-shrink-0')
-                        status_label = ui.label().classes('hidden')
-                        name_label = ui.label(display_name).classes('text-[10px] font-bold tracking-widest flex-wrap break-words')
-                        name_label.style('opacity: 0.4;')
-                    
-                    # Reactive UI Updates
-                    def update_ui(ignored_val, k=key, b=btn, sl=status_label, ic=icon, nl=name_label):
-                        val = plane_state[k]
-                        main_color = plane_state.get('mfd_main_color', '#22c55e')
-                        
-                        if val:
-                            # ON STYLE: Solid Main Color Background, White Content
-                            b.style(f'background-color: {main_color} !important; color: #ffffff !important; border-color: {main_color} !important;')
-                            b.style(f'box-shadow: 0 0 30px {main_color}66;')
-                            ic.style('color: #ffffff !important;')
-                            nl.style('color: #ffffff !important; opacity: 1 !important;')
-                        else:
-                            # OFF STYLE: Black Background, Main Color Outline/Icon
-                            b.style(f'background-color: #000000 !important; color: {main_color} !important; border-color: {main_color} !important;')
-                            b.style('box-shadow: none;')
-                            ic.style(f'color: {main_color} !important;')
-                            nl.style(f'color: {main_color} !important; opacity: 0.4 !important;')
-                    
-                    # Trigger UI update on state OR color change
-                    ui.label().bind_visibility_from(plane_state, key, backward=lambda v, f=update_ui: (f(v), False)[1])
-                    ui.label().bind_visibility_from(plane_state, 'mfd_main_color', backward=lambda v, f=update_ui: (f(v), False)[1])
-
         # Weapon/Countermeasure Display Panel
-        with ui.column().classes('w-full flex-grow border-t border-slate-700 pt-4 gap-4'):
+        with ui.column().classes('w-full flex-grow gap-4'):
             # WEAPONS Section Title
             title_weapons = ui.label("WEAPONS").classes('text-sm font-bold tracking-widest w-full text-center')
             title_weapons.style('opacity: 0.6; letter-spacing: 0.15em;')
@@ -177,6 +134,52 @@ def index():
                     ui.label("EW").classes('text-sm font-bold tracking-widest opacity-40')
                     ew_label = ui.label(f"{plane_state.get('ew_jammer', 0)}%").classes('text-4xl font-black tracking-widest')
                     ew_label.style('color: #ffffff')
+            
+            # Line between sections
+            ui.element('div').classes('w-full border-b border-slate-700')
+
+            # SYSTEM Section Title
+            title_system = ui.label("SYSTEM").classes('text-sm font-bold tracking-widest w-full text-center')
+            title_system.style('opacity: 0.6; letter-spacing: 0.15em;')
+
+            # Control Grid - Responsive Flex Layout
+            with ui.element('div').classes('w-full flex-grow') as grid_container:
+                grid_container.style('display: grid; grid-template-columns: repeat(2, 1fr); grid-auto-rows: 1fr; gap: 0.5rem;')
+                
+                for key in ["lights", "flight_control", "radar", "night_vision", "wheels", "engine"]:
+                    icon_name = ICONS.get(key, 'settings')
+                    display_name = key.replace('_', ' ').upper()
+                    
+                    with ui.card().tight().classes('bg-transparent border-0 shadow-none'):
+                        btn = ui.button(on_click=lambda _, k=key: toggle(k)).classes('w-full h-full flex flex-row items-center justify-start p-2 transition-all duration-300 bg-black box-border gap-2').props('unelevated stack')
+                        btn.style('border: 3px solid currentColor;')
+                        with btn:
+                            icon = ui.icon(icon_name).classes('text-5xl flex-shrink-0')
+                            status_label = ui.label().classes('hidden')
+                            name_label = ui.label(display_name).classes('text-[10px] font-bold tracking-widest flex-wrap break-words')
+                            name_label.style('opacity: 0.4;')
+                        
+                        # Reactive UI Updates
+                        def update_ui(ignored_val, k=key, b=btn, sl=status_label, ic=icon, nl=name_label):
+                            val = plane_state[k]
+                            main_color = plane_state.get('mfd_main_color', '#22c55e')
+                            
+                            if val:
+                                # ON STYLE: Solid Main Color Background, White Content
+                                b.style(f'background-color: {main_color} !important; color: #ffffff !important; border-color: {main_color} !important;')
+                                b.style(f'box-shadow: 0 0 30px {main_color}66;')
+                                ic.style('color: #ffffff !important;')
+                                nl.style('color: #ffffff !important; opacity: 1 !important;')
+                            else:
+                                # OFF STYLE: Black Background, Main Color Outline/Icon
+                                b.style(f'background-color: #000000 !important; color: {main_color} !important; border-color: {main_color} !important;')
+                                b.style('box-shadow: none;')
+                                ic.style(f'color: {main_color} !important;')
+                                nl.style(f'color: {main_color} !important; opacity: 0.4 !important;')
+                        
+                        # Trigger UI update on state OR color change
+                        ui.label().bind_visibility_from(plane_state, key, backward=lambda v, f=update_ui: (f(v), False)[1])
+                        ui.label().bind_visibility_from(plane_state, 'mfd_main_color', backward=lambda v, f=update_ui: (f(v), False)[1])
             
             def lerp_color(main_color_hex: str, ammo_ratio: float) -> str:
                 """Lerp between red (0) and main color (1)"""
